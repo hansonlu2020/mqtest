@@ -20,7 +20,7 @@ public class ProducterDemo {
 		 String exchangeName = args[2];
 		 String routingKey = args[3];
 		 
-		 int speed = 0; 
+		 int speed = 1000; 
 		 if (args.length > 4)
 		 {
 			 speed = Integer.parseInt(args[4]);
@@ -50,18 +50,26 @@ public class ProducterDemo {
 		 chan = conn.createChannel();
 		 
 		 chan.exchangeDeclare(exchangeName, "topic", true);
-		 
+		 long lastSendTime = System.currentTimeMillis();
 		 int i = 0; 
 		 while (true)
 		 {
-			 if ( i++ % speed == 0)
+			 if (i > 0 && i % speed == 0)
 				 Thread.sleep(interval);
-			 
-			 if (i % 5000 == 0)
+		
+			 if (i > 0 && i % 5000 == 0)
 			 {
-				System.out.println("send " + i);
+					int qps = (int)(((double)5000 / (System.currentTimeMillis() - lastSendTime))*1000);
+					System.out.println("send" + i +  " qps:" +  qps);
+					lastSendTime = System.currentTimeMillis();
+
+						//	System.out.println("send " + i);
 			 }
+				
 			 chan.basicPublish(exchangeName, routingKey, MessageProperties.MINIMAL_PERSISTENT_BASIC,msg.getBytes());
+			 
+			 i++;
+				
 		 }
 	}
 }

@@ -30,11 +30,11 @@ public class ConsumerDemo {
 			chan.queueDeclare(queueName, true, false, false, null);
 			chan.basicQos(64);
 			chan.queueBind(queueName, exchangeName, routingKey);
-			Consumer consumer = new Consumer(chan) {
+			Consumer consumer = new Consumer(queueName, chan) {
 			};
 			consumer.setNoAck(noAck);
 			
-			chan.basicConsume(queueName, noAck, consumer);
+			chan.basicConsume(queueName, noAck, ""+System.currentTimeMillis() ,  consumer);
 		}
 
 		catch (Exception e) {
@@ -53,13 +53,15 @@ public class ConsumerDemo {
 		final String routingKey = args[4];
 		final boolean  noAck = Integer.parseInt(args[5]) != 0;
 		int threadCnt = 1;
-		if (args.length > 5)
+		if (args.length > 6)
 			threadCnt = Integer.parseInt(args[6]);
 
 		for (int i = 0; i < threadCnt; i++) {
 
 			final String tempQueue = queueName + "_" + i;
 
+			System.out.println("start  queue consumer " + tempQueue);
+			
 			new Thread(new Runnable() {
 
 				public void run() {
@@ -80,12 +82,14 @@ class Consumer extends DefaultConsumer {
 
 	long lastRecvTime = 0;
 	
+	String queueName;
 	public void setNoAck(boolean noAck) {
 		this.noAck = noAck;
 	}
 
-	public Consumer(Channel channel) throws IOException {
+	public Consumer(String queueName, Channel channel) throws IOException {
 		super(channel);
+		this.queueName = queueName;
 		// TODO Auto-generated constructor stub
 	}
 
@@ -96,7 +100,7 @@ class Consumer extends DefaultConsumer {
 		recvCnt++;
 		if (recvCnt > 0 && recvCnt % 5000 == 0) {
 			int qps = (int)(((double)5000 / (System.currentTimeMillis() - lastRecvTime))*1000);
-			System.out.println("recv" + recvCnt +  " qps:" +  qps);
+			System.out.println(queueName + "recv" + recvCnt +  " qps:" +  qps);
 			lastRecvTime = System.currentTimeMillis();
 		}
 
